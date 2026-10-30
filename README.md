@@ -21,6 +21,13 @@ oc logs -n jh-test-proj job/mcp-registry-registration
 
 The Application uses this repository's `main` branch and the cluster-local
 Argo CD destination. Versions stay drafts. No registry history is deleted.
+
+Live validation on October 30, 2026 succeeded: the initial and repeat full
+syncs were Synced/Healthy with successful hook Jobs. The first created one real
+server draft (53 tools, five resources, three templates) and three separate
+synthetic drafts; the repeat reported all four unchanged. The publisher could
+read this workspace (200), was denied another workspace (403), and had no
+registry-delete or Secret-read permission. The existing runtime was not changed.
 For the general package instructions below, first `cd registry-registration`;
 those paths are relative to that standalone bundle.
 
@@ -247,6 +254,5 @@ Prepared/checked October 30, 2026. The standalone copy was built with Kustomize
 and passed 12 offline publication/copy-portability tests. All generated resources
 and the example Argo Application passed server-side dry-run. Internal
 HTTPS/service-account registry access was verified using an existing MLflow pod.
-A complete Argo sync with the new publisher identity was not run as part of
-preparing this package; no new Application, identity, Job or registry data was
-installed.
+The initial preparation did not install an Application. The subsequent
+`jh-test-proj` live rollout and repeat-sync results are recorded above.
