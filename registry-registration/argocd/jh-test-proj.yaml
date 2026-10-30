@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jh-test-proj-mcp-registration
+  namespace: openshift-gitops
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jhurlocker/rhoai_mcp.git
+    targetRevision: main
+    path: registry-registration/overlays/jh-test-proj
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: jh-test-proj
+  ignoreDifferences:
+    - group: ""
+      kind: ConfigMap
+      name: mcp-registry-service-ca
+      jsonPointers: [/data]
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 2
+      backoff: {duration: 10s, factor: 2, maxDuration: 60s}

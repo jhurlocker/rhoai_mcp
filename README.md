@@ -1,5 +1,30 @@
 # MCP registry registration with Argo CD
 
+## jh-test-proj cluster POC
+
+The registration bundle is under `registry-registration/` in this repository.
+The `jh-test-proj` overlay registers the existing server from namespace
+`rhoai-mcp` into the `jh-test-proj` AI Hub/MLflow workspace, and also loads the
+three synthetic draft versions in a separate POC record. It does not redeploy
+the existing MCP runtime. Project requester `admin` and project administrators
+are recorded as POC owner/contact references; these are not verified enterprise
+ownership or security classification.
+
+From the repository root:
+
+```bash
+kustomize build registry-registration/overlays/jh-test-proj
+oc apply -f registry-registration/argocd/jh-test-proj.yaml
+oc get application jh-test-proj-mcp-registration -n openshift-gitops
+oc logs -n jh-test-proj job/mcp-registry-registration
+```
+
+The Application uses this repository's `main` branch and the cluster-local
+Argo CD destination. Versions stay drafts. No registry history is deleted.
+For the general package instructions below, first `cd registry-registration`;
+those paths are relative to that standalone bundle.
+
+
 Copy **this directory's contents** into a new Git repository. It is a standalone
 registration-only package for clusters that already have OpenShift AI and the MLflow-backed MCP registry installed and configured.
 It has no imports, build paths, or runtime dependency on the original validation
