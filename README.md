@@ -43,7 +43,8 @@ it needs Argo authorization for the MCPServer, Route and uniquely named
 TokenReview/SubjectAccessReview ClusterRole/Binding.
 
 Copy **this directory's contents** into a new Git repository. It is a standalone
-registration-only package for clusters that already have OpenShift AI and the MLflow-backed MCP registry installed and configured.
+registration-only package for clusters that already have OpenShift AI,
+`rhoai-mcp`, and the MLflow-backed MCP registry installed and configured.
 It has no imports, build paths, or runtime dependency on the original validation
 repository. It requires no custom image build, `oc` binary, Python packages,
 interactive login, or credentials committed to Git.
@@ -69,7 +70,7 @@ interactive login, or credentials committed to Git.
     └── settings.env             # Cluster endpoints, version and metadata
 ```
 
-The package creates a publisher ServiceAccount, Role/Binding, ConfigMaps and a
+The base/example creates a publisher ServiceAccount, Role/Binding, ConfigMaps and a
 short-lived Job. It does not install/reconfigure the MCP server, MLflow, gateway,
 operators, public routes, namespaces or the rest of the validation project.
 The publisher has `get`, `list`, `create`, `update` on the MLflow
@@ -118,6 +119,11 @@ Rename/copy that overlay for each target cluster. The namespace already exists.
 | `REGISTER_REAL` | Default `true`; set false for a synthetic-data-only Application. |
 | `REGISTER_POC` | Default `false`; set true to also load the three synthetic draft versions. |
 | `POC_RECORD_NAME` | Dedicated `io.example/mcp-acceptance-*` name for those synthetic records. |
+| `ENSURE_ACCESS_ENDPOINT` | Default `false`; `true` creates a missing native endpoint for the active real version. Set a client-reachable `MCP_URL` and the required header descriptor in server JSON. |
+| `CAPABILITIES_FILE` | Optional committed JSON snapshot path. With discovery enabled, the Job verifies runtime version/protocol; use a separate authorized verifier to compare full live metadata. |
+| `MCP_DISCOVERY_URL` | Optional internal discovery URL when `MCP_URL` is the public connection URL. |
+| `MCP_ROUTE_NAME` | Optional local Route to resolve dynamically; requires get permission on that named Route. |
+| `MCP_WAIT_SECONDS` | Bounded wait for Route admission and runtime initialization during deployment. |
 | `APPLICATION_ID` | Stable ownership identity for resumable drafts, default `rhoai-mcp-registration`. Keep it stable across normal syncs. |
 
 `base/data/server.json` and `base/data/metadata.json` are parsed templates,
@@ -194,7 +200,7 @@ documentation describes these phases. Hooks do not run in selective/resource-onl
 syncs; use a full Application sync. Do not add a TTL that independently removes
 the Job if you want its logs retained.
 
-The Application ignores only the injected CA ConfigMap's `/data` field and
+The example Application ignores the injected CA ConfigMap's `/data` field and
 uses `RespectIgnoreDifferences=true`, so Argo does not erase the OpenShift
 controller's trust bundle. Keep that rule when adapting the Application; if
 you add a Kustomize `namePrefix`, update the rule's ConfigMap name too. Other
@@ -234,9 +240,14 @@ The publisher preflights **all** selected records/versions before writes:
   Application does not remove registry history or reverse earlier API writes.
 
 Once published, treat a version's metadata/capability snapshot as immutable in
-this POC workflow. Record changes as a new version. If runtime capabilities drift
-without a version bump, the next full sync detects the changed snapshot and
-fails rather than silently overwriting history. Reverting Git does not undo a
+this POC workflow. Record changes as a new version. In direct-discovery mode,
+a full sync detects changed capabilities and fails on content conflict. In
+`CAPABILITIES_FILE` mode, initialization verifies only server version/protocol;
+it does not detect same-version capability drift. Compare full discovery with
+the committed snapshot separately after runtime changes. The snapshot for
+`jh-test-proj` was captured by an authorized administrator; the publisher has no
+broad workload grants merely to list administrator-visible tools. Registry
+capability metadata does not grant callers runtime permissions. Reverting Git does not undo a
 publication or automatically reactivate a deprecated version. Native-deleted
 semvers remain reserved; use a new version or dedicated POC record name.
 
@@ -264,5 +275,8 @@ Prepared/checked October 30, 2026. The standalone copy was built with Kustomize
 and passed 12 offline publication/copy-portability tests. All generated resources
 and the example Argo Application passed server-side dry-run. Internal
 HTTPS/service-account registry access was verified using an existing MLflow pod.
-The initial preparation did not install an Application. The subsequent
-`jh-test-proj` live rollout and repeat-sync results are recorded above.
+Those checks described initial base/example preparation only. The subsequent
+`jh-test-proj` overlay has now passed the live deployment and repeat-sync tests
+described above, with 15 offline GitOps and 6 publication regression tests.
+The `jh-test-proj` Application also preserves its runtime CA data and assigned
+Route host with targeted ignore rules; keep those rules when adapting it.
