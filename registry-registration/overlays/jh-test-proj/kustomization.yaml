@@ -2,8 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: jh-test-proj
 resources:
-  - ../../base
+- ../../base
+- runtime/prerequisites.yaml
+- runtime/mcpserver.yaml
+- runtime/route.yaml
 configMapGenerator:
-  - name: mcp-registry-settings
-    behavior: merge
-    envs: [settings.env]
+- name: mcp-registry-settings
+  behavior: merge
+  envs:
+  - settings.env

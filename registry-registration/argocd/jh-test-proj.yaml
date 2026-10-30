@@ -13,16 +13,30 @@ spec:
     server: https://kubernetes.default.svc
     namespace: jh-test-proj
   ignoreDifferences:
-    - group: ""
-      kind: ConfigMap
-      name: mcp-registry-service-ca
-      jsonPointers: [/data]
+  - group: ''
+    kind: ConfigMap
+    name: mcp-registry-service-ca
+    jsonPointers:
+    - /data
+  - group: ''
+    kind: ConfigMap
+    name: rhoai-mcp-service-ca
+    jsonPointers:
+    - /data
+  - group: route.openshift.io
+    kind: Route
+    name: rhoai-mcp
+    jsonPointers:
+    - /spec/host
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - RespectIgnoreDifferences=true
+    - RespectIgnoreDifferences=true
     retry:
       limit: 2
-      backoff: {duration: 10s, factor: 2, maxDuration: 60s}
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 60s

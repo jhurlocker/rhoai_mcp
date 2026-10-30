@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rhoai-mcp
+  namespace: jh-test-proj
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jh-test-proj-rhoai-mcp-auth-review
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - users
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jh-test-proj-rhoai-mcp-auth-review
+subjects:
+- kind: ServiceAccount
+  name: rhoai-mcp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: jh-test-proj-rhoai-mcp-auth-review
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rhoai-mcp-service-ca
+  namespace: jh-test-proj
+  annotations:
+    service.beta.openshift.io/inject-cabundle: 'true'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rhoai-mcp-config
+  namespace: jh-test-proj
+data:
+  RHOAI_MCP_AUTH_MODE: auto
+  RHOAI_MCP_HOST: 0.0.0.0
+  RHOAI_MCP_PORT: '8000'
+  RHOAI_MCP_TRANSPORT: streamable-http
+  RHOAI_MCP_LOG_LEVEL: INFO
+  RHOAI_MCP_READ_ONLY_MODE: 'false'
+  RHOAI_MCP_ENABLE_DANGEROUS_OPERATIONS: 'false'
+  RHOAI_MCP_OIDC_ENABLED: 'true'
+  RHOAI_MCP_OIDC_KUBE_AUTH_STRATEGY: user-token
+  RHOAI_MCP_OIDC_TOKEN_MODE: token-review
+  RHOAI_MCP_PLANNER_MODEL_CATALOG_URL: https://model-catalog.rhoai-model-registries.svc:8443

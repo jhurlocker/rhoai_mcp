@@ -1,0 +1,80 @@
+apiVersion: mcp.x-k8s.io/v1alpha1
+kind: MCPServer
+metadata:
+  name: rhoai-mcp
+  namespace: jh-test-proj
+  labels:
+    app.kubernetes.io/name: rhoai-mcp
+    app.kubernetes.io/component: server
+  annotations:
+    mcp.opendatahub.io/catalog-server: com.redhat/rhoai-mcp-server
+spec:
+  source:
+    type: ContainerImage
+    containerImage:
+      ref: quay.io/opendatahub/odh-rhoai-mcp@sha256:803f493248ac17328c9775f1a8e0fd7a560e0c17a49cc392790c94b6d73890ef
+  config:
+    arguments:
+    - --transport
+    - streamable-http
+    port: 8000
+    path: /mcp
+    envFrom:
+    - configMapRef:
+        name: rhoai-mcp-config
+    env:
+    - name: MODEL_CATALOG_CA_BUNDLE
+      value: /etc/pki/service-ca/service-ca.crt
+    storage:
+    - path: /tmp
+      permissions: ReadWrite
+      source:
+        type: EmptyDir
+        emptyDir: {}
+    - path: /etc/pki/service-ca
+      permissions: ReadOnly
+      source:
+        type: ConfigMap
+        configMap:
+          name: rhoai-mcp-service-ca
+  runtime:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    security:
+      serviceAccountName: rhoai-mcp
+      podSecurityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+          - ALL
+    health:
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: 8000
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 3
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: 8000
+        initialDelaySeconds: 10
+        periodSeconds: 30
+        timeoutSeconds: 5
+        failureThreshold: 3
+  extraLabels:
+    app.kubernetes.io/name: rhoai-mcp
+    app.kubernetes.io/component: server
