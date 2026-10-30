@@ -1,0 +1,2660 @@
+{
+  "serverInfo": {
+    "name": "rhoai-mcp",
+    "version": "1.29.1"
+  },
+  "protocolVersion": "2025-03-26",
+  "tools": [
+    {
+      "name": "check_deployment_prerequisites",
+      "description": "Pre-flight checks before model deployment.\n\n        Validates cluster connectivity, GPU availability, runtime availability,\n        storage accessibility, and namespace permissions.\n\n        Args:\n            namespace: The project (namespace) name.\n            model_format: Model format (pytorch, onnx, tensorflow, etc.).\n            storage_uri: Model storage location (s3:// or pvc://).\n\n        Returns:\n            Pre-flight check results with any issues found.\n        ",
+      "inputSchema": {
+        "properties": {
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "model_format": {
+            "title": "Model Format",
+            "type": "string"
+          },
+          "storage_uri": {
+            "title": "Storage Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "namespace",
+          "model_format",
+          "storage_uri"
+        ],
+        "title": "check_deployment_prerequisitesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "check_deployment_prerequisitesDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "cluster_summary",
+      "description": "Get a compact cluster overview optimized for context windows.\n\n        Returns a minimal summary of the entire cluster including project count,\n        workbench status, model deployment status, and resource availability.\n        This is the most efficient way to get an overview before drilling down.\n\n        Returns:\n            Compact cluster summary with counts and status indicators.\n        ",
+      "inputSchema": {
+        "properties": {},
+        "title": "cluster_summaryArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "description": "Compact cluster overview optimized for context windows.",
+        "properties": {
+          "projects": {
+            "description": "Total number of projects",
+            "title": "Projects",
+            "type": "integer"
+          },
+          "project_names": {
+            "description": "List of project names",
+            "items": {
+              "type": "string"
+            },
+            "title": "Project Names",
+            "type": "array"
+          },
+          "workbenches": {
+            "description": "Workbench status (e.g. '3/5 running')",
+            "title": "Workbenches",
+            "type": "string"
+          },
+          "models": {
+            "description": "Model status (e.g. '2/3 ready')",
+            "title": "Models",
+            "type": "string"
+          },
+          "pipelines": {
+            "description": "Total number of pipelines",
+            "title": "Pipelines",
+            "type": "integer"
+          },
+          "storage": {
+            "description": "Total number of storage volumes",
+            "title": "Storage",
+            "type": "integer"
+          },
+          "data_connections": {
+            "description": "Total number of data connections",
+            "title": "Data Connections",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "projects",
+          "project_names",
+          "workbenches",
+          "models",
+          "pipelines",
+          "storage",
+          "data_connections"
+        ],
+        "title": "ClusterSummary",
+        "type": "object"
+      }
+    },
+    {
+      "name": "create_data_science_project",
+      "description": "Create a new Data Science Project.\n\n        Creates a Kubernetes namespace with the appropriate labels and annotations\n        to be recognized as an RHOAI Data Science Project.\n\n        Args:\n            name: Project name (will be the namespace name, must be DNS-compatible).\n            display_name: Human-readable display name for the project.\n            description: Project description.\n            enable_modelmesh: Enable ModelMesh (multi-model) serving. Default is\n                single-model (KServe) serving.\n\n        Returns:\n            The created project information.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Display Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "enable_modelmesh": {
+            "default": false,
+            "title": "Enable Modelmesh",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "create_data_science_projectArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_data_science_projectDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "create_s3_data_connection",
+      "description": "Create an S3 data connection.\n\n        Creates a secret with the appropriate RHOAI labels and annotations\n        that can be used by workbenches and pipelines to access S3 storage.\n\n        Args:\n            name: Connection name (will be the secret name).\n            namespace: Project (namespace) name.\n            aws_access_key_id: AWS Access Key ID.\n            aws_secret_access_key: AWS Secret Access Key.\n            aws_s3_endpoint: S3 endpoint URL (e.g., https://s3.amazonaws.com).\n            aws_s3_bucket: S3 bucket name.\n            display_name: Human-readable display name.\n            aws_default_region: AWS region (default: us-east-1).\n\n        Returns:\n            Created data connection information (credentials masked).\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "aws_access_key_id": {
+            "title": "Aws Access Key Id",
+            "type": "string"
+          },
+          "aws_secret_access_key": {
+            "title": "Aws Secret Access Key",
+            "type": "string"
+          },
+          "aws_s3_endpoint": {
+            "title": "Aws S3 Endpoint",
+            "type": "string"
+          },
+          "aws_s3_bucket": {
+            "title": "Aws S3 Bucket",
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Display Name"
+          },
+          "aws_default_region": {
+            "default": "us-east-1",
+            "title": "Aws Default Region",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "namespace",
+          "aws_access_key_id",
+          "aws_secret_access_key",
+          "aws_s3_endpoint",
+          "aws_s3_bucket"
+        ],
+        "title": "create_s3_data_connectionArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_s3_data_connectionDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "create_serving_runtime",
+      "description": "Create a serving runtime from a platform template.\n\n        Instantiates a serving runtime template (e.g., vLLM, TGIS) from the\n        platform namespace into the target project namespace.\n\n        Use list_serving_runtimes to see available templates\n        (those with 'requires_instantiation: true').\n\n        Args:\n            namespace: The project (namespace) where the runtime will be created.\n            template_name: Name of the template to instantiate\n                (e.g., 'vllm-cuda-runtime-template').\n\n        Returns:\n            Information about the created ServingRuntime.\n        ",
+      "inputSchema": {
+        "properties": {
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "template_name": {
+            "title": "Template Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "namespace",
+          "template_name"
+        ],
+        "title": "create_serving_runtimeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_serving_runtimeDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "create_storage",
+      "description": "Create a new persistent storage volume (PVC).\n\n        Creates a PersistentVolumeClaim that can be mounted by workbenches\n        or other pods in the project.\n\n        Args:\n            name: PVC name (must be DNS-compatible).\n            namespace: Project (namespace) name.\n            size: Storage size (e.g., '10Gi', '100Gi').\n            display_name: Human-readable display name.\n            access_mode: Access mode - ReadWriteOnce, ReadOnlyMany, or ReadWriteMany.\n            storage_class: Storage class name (uses cluster default if not specified).\n\n        Returns:\n            Created storage information.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "size": {
+            "default": "10Gi",
+            "title": "Size",
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Display Name"
+          },
+          "access_mode": {
+            "default": "ReadWriteOnce",
+            "title": "Access Mode",
+            "type": "string"
+          },
+          "storage_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Storage Class"
+          }
+        },
+        "required": [
+          "name",
+          "namespace"
+        ],
+        "title": "create_storageArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_storageDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_data_connection",
+      "description": "Delete a data connection.\n\n        WARNING: Workbenches or pipelines using this connection will lose\n        access to the associated data source.\n\n        Args:\n            name: The data connection (secret) name.\n            namespace: The project (namespace) name.\n            confirm: Must be True to actually delete.\n\n        Returns:\n            Confirmation of deletion.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "confirm": {
+            "default": false,
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "namespace"
+        ],
+        "title": "delete_data_connectionArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "delete_data_connectionDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_data_science_project",
+      "description": "Delete a Data Science Project.\n\n        WARNING: This deletes the entire namespace and ALL resources within it,\n        including workbenches, models, pipelines, data connections, and storage.\n\n        Args:\n            name: The project (namespace) name to delete.\n            confirm: Must be True to actually delete. This is a safety measure.\n\n        Returns:\n            Confirmation of deletion or error message.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "confirm": {
+            "default": false,
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "delete_data_science_projectArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "delete_data_science_projectDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_inference_service",
+      "description": "Delete a deployed model.\n\n        Args:\n            name: The InferenceService name.\n            namespace: The project (namespace) name.\n            confirm: Must be True to actually delete.\n\n        Returns:\n            Confirmation of deletion.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "confirm": {
+            "default": false,
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "namespace"
+        ],
+        "title": "delete_inference_serviceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "delete_inference_serviceDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "delete_storage",
+      "description": "Delete a persistent storage volume (PVC).\n\n        WARNING: This permanently deletes the PVC and all data stored in it.\n        This operation cannot be undone.\n\n        Args:\n            name: The PVC name.\n            namespace: The project (namespace) name.\n            confirm: Must be True to actually delete.\n\n        Returns:\n            Confirmation of deletion.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "confirm": {
+            "default": false,
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "namespace"
+        ],
+        "title": "delete_storageArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "delete_storageDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "deploy_model",
+      "description": "Deploy a model as an InferenceService.\n\n        Creates a KServe InferenceService to serve model predictions.\n\n        Args:\n            name: Deployment name (must be DNS-compatible).\n            namespace: Project (namespace) name.\n            runtime: Serving runtime to use (use list_serving_runtimes to see options).\n            model_format: Model format (onnx, pytorch, tensorflow, sklearn, etc.).\n            storage_uri: Model location (s3://bucket/path or pvc://pvc-name/path).\n            display_name: Human-readable display name.\n            min_replicas: Minimum number of replicas (0 for scale-to-zero).\n            max_replicas: Maximum number of replicas.\n            cpu_request: CPU request per replica.\n            cpu_limit: CPU limit per replica.\n            memory_request: Memory request per replica.\n            memory_limit: Memory limit per replica.\n            gpu_count: Number of GPUs per replica.\n\n        Returns:\n            Created InferenceService information.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "runtime": {
+            "title": "Runtime",
+            "type": "string"
+          },
+          "model_format": {
+            "title": "Model Format",
+            "type": "string"
+          },
+          "storage_uri": {
+            "title": "Storage Uri",
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Display Name"
+          },
+          "min_replicas": {
+            "default": 1,
+            "title": "Min Replicas",
+            "type": "integer"
+          },
+          "max_replicas": {
+            "default": 1,
+            "title": "Max Replicas",
+            "type": "integer"
+          },
+          "cpu_request": {
+            "default": "1",
+            "title": "Cpu Request",
+            "type": "string"
+          },
+          "cpu_limit": {
+            "default": "2",
+            "title": "Cpu Limit",
+            "type": "string"
+          },
+          "memory_request": {
+            "default": "4Gi",
+            "title": "Memory Request",
+            "type": "string"
+          },
+          "memory_limit": {
+            "default": "8Gi",
+            "title": "Memory Limit",
+            "type": "string"
+          },
+          "gpu_count": {
+            "default": 0,
+            "title": "Gpu Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "namespace",
+          "runtime",
+          "model_format",
+          "storage_uri"
+        ],
+        "title": "deploy_modelArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "deploy_modelDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "diagnose_resource",
+      "description": "Comprehensive diagnostic for any resource in one call.\n\n        Gathers all relevant information about a resource including status,\n        events, logs (if applicable), related resources, and detected issues.\n        Use this when troubleshooting a problematic resource.\n\n        Args:\n            resource_type: Type of resource - \"workbench\", \"model\",\n                \"training_job\", or \"pipeline\".\n            name: The resource name.\n            namespace: The project (namespace) name.\n\n        Returns:\n            Complete diagnostic with:\n            - resource: Resource details\n            - status_summary: Human-readable status\n            - events: Kubernetes events\n            - logs: Container logs (if applicable)\n            - issues_detected: Identified problems\n            - suggested_fixes: Recommended actions\n            - related_resources: Other relevant resources\n        ",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_type",
+          "name",
+          "namespace"
+        ],
+        "title": "diagnose_resourceArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "estimate_serving_resources",
+      "description": "Estimate GPU/memory/CPU requirements for model serving.\n\n        Calculates approximate resource requirements based on model size\n        and performance targets.\n\n        Args:\n            model_id: Model identifier (e.g., \"meta-llama/Llama-2-7b-hf\").\n            target_throughput: Target requests per second (optional).\n            target_latency_ms: Target latency in milliseconds (optional).\n\n        Returns:\n            Resource estimates including GPU memory and recommendations.\n        ",
+      "inputSchema": {
+        "properties": {
+          "model_id": {
+            "title": "Model Id",
+            "type": "string"
+          },
+          "target_throughput": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Target Throughput"
+          },
+          "target_latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Target Latency Ms"
+          }
+        },
+        "required": [
+          "model_id"
+        ],
+        "title": "estimate_serving_resourcesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "estimate_serving_resourcesDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "execute_deployment",
+      "description": "Deploy the chosen model configuration to RHOAI.\n\n        Creates a KServe InferenceService using the parameters resolved\n        by plan_deployment. Should only be called after the customer has\n        reviewed and confirmed the deployment plan.\n\n        The InferenceService may take several minutes to reach Ready state.\n        After calling this tool, use get_inference_service to monitor\n        progress and get_model_endpoint once the model is ready.\n\n        Args:\n            model_id: HuggingFace model ID (e.g., \"meta-llama/Llama-3.1-8B-Instruct\").\n                Used to generate the deployment name.\n            namespace: Target RHOAI project namespace.\n            runtime: Serving runtime name (from plan_deployment).\n            storage_uri: Model location (s3://, pvc://, or oci://).\n            gpu_count: Total number of GPUs per replica.\n            gpu_type: GPU type (e.g., H100, A100-80). Used for memory estimation.\n            tensor_parallel: Tensor parallelism degree (default: 1).\n            replicas: Number of replicas (default: 1).\n            display_name: Human-readable display name for the deployment.\n\n        Returns:\n            Deployment status including name, namespace, and current state.\n            Check get_inference_service for readiness; get_model_endpoint for the URL.\n        ",
+      "inputSchema": {
+        "properties": {
+          "model_id": {
+            "title": "Model Id",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "runtime": {
+            "title": "Runtime",
+            "type": "string"
+          },
+          "storage_uri": {
+            "title": "Storage Uri",
+            "type": "string"
+          },
+          "gpu_count": {
+            "title": "Gpu Count",
+            "type": "integer"
+          },
+          "gpu_type": {
+            "title": "Gpu Type",
+            "type": "string"
+          },
+          "tensor_parallel": {
+            "default": 1,
+            "title": "Tensor Parallel",
+            "type": "integer"
+          },
+          "replicas": {
+            "default": 1,
+            "title": "Replicas",
+            "type": "integer"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Display Name"
+          }
+        },
+        "required": [
+          "model_id",
+          "namespace",
+          "runtime",
+          "storage_uri",
+          "gpu_count",
+          "gpu_type"
+        ],
+        "title": "execute_deploymentArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "execute_deploymentDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "explore_cluster",
+      "description": "Complete cluster exploration in one call.\n\n        Returns comprehensive overview of the entire RHOAI cluster including\n        all projects, their resources, and any issues detected. Use this as\n        the first tool when exploring an unfamiliar cluster.\n\n        Args:\n            include_resources: Include resource counts per project.\n            include_health: Include health checks and issue detection.\n\n        Returns:\n            Complete cluster exploration with:\n            - cluster: Overall cluster info (GPU availability, node count)\n            - projects: List of projects with resource summaries\n            - recommendations: Suggested next actions\n        ",
+      "inputSchema": {
+        "properties": {
+          "include_resources": {
+            "default": true,
+            "title": "Include Resources",
+            "type": "boolean"
+          },
+          "include_health": {
+            "default": true,
+            "title": "Include Health",
+            "type": "boolean"
+          }
+        },
+        "title": "explore_clusterArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "find_benchmarks_by_gpu",
+      "description": "Find all benchmarks for a specific GPU type.\n\n        Automatically detects whether the cluster has a standard Kubeflow\n        Model Registry or Red Hat AI Model Catalog and uses the appropriate\n        approach:\n\n        - **Model Registry**: Searches structured benchmark custom properties\n          across all model versions for the specified GPU type.\n        - **Model Catalog**: Searches model READMEs for mentions of the GPU\n          type and returns benchmark-relevant sections from matching models.\n\n        Args:\n            gpu_type: GPU type to filter by (e.g., \"A100\", \"H100\", \"L40S\").\n\n        Returns:\n            List of benchmark data for models tested on the specified GPU\n            (Model Registry), or list of catalog models whose READMEs\n            mention the GPU type and contain benchmark content (Model\n            Catalog).\n        ",
+      "inputSchema": {
+        "properties": {
+          "gpu_type": {
+            "title": "Gpu Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gpu_type"
+        ],
+        "title": "find_benchmarks_by_gpuArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "find_benchmarks_by_gpuDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_catalog_model_artifacts",
+      "description": "Get artifacts (storage URIs) for a model in the Model Catalog.\n\n        Artifacts contain the storage locations and format details for\n        downloading or deploying a model from the catalog.\n\n        This tool only works when the cluster has a Model Catalog\n        (not a standard Kubeflow Model Registry).\n\n        Args:\n            model_name: Name of the model (e.g., 'RedHatAI/granite-3.1-8b-instruct').\n            source_id: Optional source ID. If not provided, will be looked up\n                from the model. Use list_catalog_sources to see available sources.\n\n        Returns:\n            List of artifacts with storage URIs and format information.\n        ",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Id"
+          }
+        },
+        "required": [
+          "model_name"
+        ],
+        "title": "get_catalog_model_artifactsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_catalog_model_artifactsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_data_connection",
+      "description": "Get detailed information about a data connection.\n\n        Sensitive values like secret keys are masked for security.\n\n        Args:\n            name: The data connection (secret) name.\n            namespace: The project (namespace) name.\n\n        Returns:\n            Data connection details with masked credentials.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "namespace"
+        ],
+        "title": "get_data_connectionArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_data_connectionDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_deployment_config",
+      "description": "Generate Kubernetes deployment YAML configs for a recommended model.\n\n        Takes the specification values from recommend_model output plus a\n        category name, and returns InferenceService, HPA, and ServiceMonitor\n        YAML configurations.\n\n        Typical workflow:\n        1. Call recommend_model to get recommendations with specification\n        2. Call get_deployment_config with specification values + category\n        3. Review or apply the generated YAML configs\n\n        Args:\n            category: Which recommendation to deploy. Valid values:\n                balanced, cost, performance, quality.\n            use_case: Use case from recommend_model specification.\n                Valid values: chatbot_conversational, code_completion,\n                code_generation_detailed, translation, content_generation,\n                summarization_short, document_analysis_rag,\n                long_document_summarization, research_legal_analysis.\n            user_count: User count from recommend_model specification.\n            prompt_tokens: Prompt tokens from recommend_model specification.\n            output_tokens: Output tokens from recommend_model specification.\n            expected_qps: Expected QPS from recommend_model specification.\n            ttft_target_ms: TTFT target (ms) from recommend_model specification.\n            itl_target_ms: ITL target (ms) from recommend_model specification.\n            e2e_target_ms: E2E target (ms) from recommend_model specification.\n            namespace: Kubernetes namespace for the generated config.\n            optimization_profile: Scoring profile for ranking. Valid values:\n                balanced, optimize_latency, optimize_cost, optimize_quality.\n            preferred_gpu_types: GPU type filter.\n                Valid: L4, A100-40, A100-80, H100, H200, B200.\n            min_quality: Minimum quality score (0-100).\n            max_cost_per_month: Maximum monthly cost in USD.\n            percentile: Percentile for SLO evaluation.\n                Valid: p90, p95, p99.\n\n        Returns:\n            Deployment config with deployment_id, namespace, model name,\n            and YAML configs (inferenceservice, autoscaling, servicemonitor),\n            or error dict if the request fails.\n        ",
+      "inputSchema": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "use_case": {
+            "title": "Use Case",
+            "type": "string"
+          },
+          "user_count": {
+            "title": "User Count",
+            "type": "integer"
+          },
+          "prompt_tokens": {
+            "title": "Prompt Tokens",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "expected_qps": {
+            "title": "Expected Qps",
+            "type": "number"
+          },
+          "ttft_target_ms": {
+            "title": "Ttft Target Ms",
+            "type": "integer"
+          },
+          "itl_target_ms": {
+            "title": "Itl Target Ms",
+            "type": "integer"
+          },
+          "e2e_target_ms": {
+            "title": "E2E Target Ms",
+            "type": "integer"
+          },
+          "namespace": {
+            "default": "default",
+            "title": "Namespace",
+            "type": "string"
+          },
+          "optimization_profile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Optimization Profile"
+          },
+          "preferred_gpu_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Preferred Gpu Types"
+          },
+          "min_quality": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Min Quality"
+          },
+          "max_cost_per_month": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Max Cost Per Month"
+          },
+          "percentile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Percentile"
+          }
+        },
+        "required": [
+          "category",
+          "use_case",
+          "user_count",
+          "prompt_tokens",
+          "output_tokens",
+          "expected_qps",
+          "ttft_target_ms",
+          "itl_target_ms",
+          "e2e_target_ms"
+        ],
+        "title": "get_deployment_configArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_deployment_configDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_expected_rps",
+      "description": "Calculate expected and peak requests per second for a use case and user count.\n\n        Uses the planner's research-backed workload distribution parameters\n        (active fraction, request rate per active user) to estimate the traffic\n        the deployment will need to handle. Useful for validating the workload\n        profile before getting recommendations.\n\n        Args:\n            use_case: The use case identifier. Valid values:\n                chatbot_conversational, code_completion, code_generation_detailed,\n                translation, content_generation, summarization_short,\n                document_analysis_rag, long_document_summarization,\n                research_legal_analysis.\n            user_count: Number of concurrent users.\n\n        Returns:\n            Expected RPS, peak RPS, and expected concurrent users.\n        ",
+      "inputSchema": {
+        "properties": {
+          "use_case": {
+            "title": "Use Case",
+            "type": "string"
+          },
+          "user_count": {
+            "title": "User Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "use_case",
+          "user_count"
+        ],
+        "title": "get_expected_rpsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_expected_rpsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_inference_service",
+      "description": "Get detailed information about a deployed model.\n\n        Args:\n            name: The InferenceService name.\n            namespace: The project (namespace) name.\n            verbosity: Response detail level - \"minimal\", \"standard\", or \"full\".\n                Use \"minimal\" for quick status checks.\n\n        Returns:\n            Model deployment information at the requested verbosity level.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "verbosity": {
+            "default": "full",
+            "title": "Verbosity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "namespace"
+        ],
+        "title": "get_inference_serviceArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_inference_serviceDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_model_artifacts",
+      "description": "Get artifacts (storage URIs) for a model version.\n\n        Artifacts contain the actual model files stored in object storage.\n        Use this to find the storage location for model deployment.\n\n        Args:\n            version_id: The model version ID.\n            verbosity: Response detail level - \"minimal\", \"standard\", or \"full\".\n\n        Returns:\n            List of artifacts with storage URIs and format information.\n        ",
+      "inputSchema": {
+        "properties": {
+          "version_id": {
+            "title": "Version Id",
+            "type": "string"
+          },
+          "verbosity": {
+            "default": "standard",
+            "title": "Verbosity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id"
+        ],
+        "title": "get_model_artifactsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_model_artifactsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_model_benchmarks",
+      "description": "Get benchmark data for a model.\n\n        Automatically detects whether the cluster has a standard Kubeflow\n        Model Registry or Red Hat AI Model Catalog and uses the appropriate\n        approach:\n\n        - **Model Registry**: Returns structured benchmark metrics (latency,\n          throughput, GPU memory) from model version custom properties.\n        - **Model Catalog**: Extracts benchmark-relevant sections from the\n          model's README markdown for the agent to interpret.\n\n        Args:\n            model_name: Name of the registered model.\n            version_name: Optional specific version name. If not provided,\n                returns benchmarks for the latest version. Applies to Model\n                Registry only; Model Catalog does not have versions.\n            gpu_type: Optional GPU type filter (e.g., \"A100\", \"H100\").\n                For Model Registry, filters by structured GPU type property.\n                For Model Catalog, reports whether the GPU is mentioned in\n                the README.\n\n        Returns:\n            Benchmark data including latency, throughput, and resource metrics\n            (Model Registry), or extracted README sections with benchmark\n            content (Model Catalog).\n        ",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "version_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Version Name"
+          },
+          "gpu_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gpu Type"
+          }
+        },
+        "required": [
+          "model_name"
+        ],
+        "title": "get_model_benchmarksArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_model_benchmarksDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_model_endpoint",
+      "description": "Get the inference endpoint URL for a deployed model.\n\n        Returns the URL that can be used to send prediction requests\n        to the model.\n\n        Args:\n            name: The InferenceService name.\n            namespace: The project (namespace) name.\n\n        Returns:\n            Model endpoint information including URL and status.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "namespace"
+        ],
+        "title": "get_model_endpointArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_model_endpointDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_model_version",
+      "description": "Get detailed information about a specific model version.\n\n        Args:\n            version_id: The version ID.\n\n        Returns:\n            Version details including state, author, and custom properties.\n        ",
+      "inputSchema": {
+        "properties": {
+          "version_id": {
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id"
+        ],
+        "title": "get_model_versionArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_model_versionDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_project_details",
+      "description": "Get detailed information about a Data Science Project.\n\n        Args:\n            name: The project (namespace) name.\n            include_resources: Whether to include resource counts (workbenches, models, etc.).\n            verbosity: Response detail level - \"minimal\", \"standard\", or \"full\".\n                Use \"minimal\" for quick status checks.\n\n        Returns:\n            Project information at the requested verbosity level.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "include_resources": {
+            "default": true,
+            "title": "Include Resources",
+            "type": "boolean"
+          },
+          "verbosity": {
+            "default": "full",
+            "title": "Verbosity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "get_project_detailsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_project_detailsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_registered_model",
+      "description": "Get detailed information about a registered model.\n\n        Args:\n            model_id: The model ID in the registry.\n            include_versions: If True, also fetch all versions for this model.\n\n        Returns:\n            Model details including name, description, owner, and optionally versions.\n        ",
+      "inputSchema": {
+        "properties": {
+          "model_id": {
+            "title": "Model Id",
+            "type": "string"
+          },
+          "include_versions": {
+            "default": false,
+            "title": "Include Versions",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model_id"
+        ],
+        "title": "get_registered_modelArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_registered_modelDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_resource",
+      "description": "Get any RHOAI resource by type.\n\n        Generic resource getter that dispatches to the appropriate domain.\n        Use this instead of domain-specific get tools for simpler workflows.\n\n        Args:\n            resource_type: Type of resource - \"workbench\", \"model\",\n                \"training_job\", \"connection\", \"storage\", or \"pipeline\".\n            name: The resource name.\n            namespace: The project (namespace) name.\n            verbosity: Response detail level - \"minimal\", \"standard\", or \"full\".\n\n        Returns:\n            Resource details at the requested verbosity level.\n        ",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "verbosity": {
+            "default": "standard",
+            "title": "Verbosity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_type",
+          "name",
+          "namespace"
+        ],
+        "title": "get_resourceArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_use_case_defaults",
+      "description": "Get SLO targets and workload profile for a use case.\n\n        Returns the benchmark-backed defaults that the planner uses when\n        building deployment specifications for a given use case. Useful for\n        showing customers the derived workload profile before running\n        recommendations, so they can review and adjust SLO targets.\n\n        Args:\n            use_case: The use case identifier. Valid values:\n                chatbot_conversational, code_completion, code_generation_detailed,\n                translation, content_generation, summarization_short,\n                document_analysis_rag, long_document_summarization,\n                research_legal_analysis.\n\n        Returns:\n            Combined SLO targets (TTFT, ITL, E2E with min/max/default) and\n            workload profile (prompt tokens, output tokens, active fraction,\n            requests per user per minute) for the use case.\n        ",
+      "inputSchema": {
+        "properties": {
+          "use_case": {
+            "title": "Use Case",
+            "type": "string"
+          }
+        },
+        "required": [
+          "use_case"
+        ],
+        "title": "get_use_case_defaultsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_use_case_defaultsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_validation_metrics",
+      "description": "Get validation metrics for a specific model version.\n\n        Automatically detects whether the cluster has a standard Kubeflow\n        Model Registry or Red Hat AI Model Catalog and uses the appropriate\n        approach:\n\n        - **Model Registry**: Returns structured validation metrics (latency\n          percentiles, throughput, resource usage, quality metrics) from\n          model version custom properties.\n        - **Model Catalog**: Extracts benchmark-relevant sections from the\n          model's README markdown. The version_name parameter is noted but\n          does not filter results, as the catalog does not have versioned\n          metrics.\n\n        Args:\n            model_name: Name of the registered model.\n            version_name: Name of the model version. Used for Model Registry\n                lookups; noted but not used for filtering in Model Catalog.\n\n        Returns:\n            Validation metrics including latency, throughput, resources,\n            test conditions, and quality metrics (Model Registry), or\n            extracted README sections (Model Catalog).\n        ",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "version_name": {
+            "title": "Version Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_name",
+          "version_name"
+        ],
+        "title": "get_validation_metricsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_validation_metricsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_catalog_sources",
+      "description": "List available sources in the Model Catalog.\n\n        Sources are categories or providers of models in the Red Hat AI\n        Model Catalog, such as 'Red Hat AI validated' or 'Community'.\n\n        This tool only works when the cluster has a Model Catalog\n        (not a standard Kubeflow Model Registry).\n\n        Returns:\n            List of sources with names, labels, and model counts.\n        ",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_catalog_sourcesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_catalog_sourcesDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_data_connections",
+      "description": "List data connections in a Data Science Project with pagination.\n\n        Data connections are secrets with RHOAI-specific labels that provide\n        credentials for accessing external data sources like S3 buckets.\n\n        Args:\n            namespace: The project (namespace) name.\n            limit: Maximum number of items to return (None for all).\n            offset: Starting offset for pagination (default: 0).\n            verbosity: Response detail level - \"minimal\", \"standard\", or \"full\".\n                Use \"minimal\" for quick status checks.\n\n        Returns:\n            Paginated list of data connections with metadata (credentials masked).\n        ",
+      "inputSchema": {
+        "properties": {
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Limit"
+          },
+          "offset": {
+            "default": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "verbosity": {
+            "default": "standard",
+            "title": "Verbosity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "namespace"
+        ],
+        "title": "list_data_connectionsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_data_connectionsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_data_science_projects",
+      "description": "List Data Science Projects in the cluster with pagination.\n\n        Returns projects (namespaces) that have the opendatahub.io/dashboard=true label,\n        indicating they are RHOAI Data Science Projects.\n\n        Args:\n            limit: Maximum number of items to return (None for all).\n            offset: Starting offset for pagination (default: 0).\n            verbosity: Response detail level - \"minimal\", \"standard\", or \"full\".\n                Use \"minimal\" for quick status checks (~87% token savings).\n\n        Returns:\n            Paginated list of projects with metadata.\n        ",
+      "inputSchema": {
+        "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Limit"
+          },
+          "offset": {
+            "default": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "verbosity": {
+            "default": "standard",
+            "title": "Verbosity",
+            "type": "string"
+          }
+        },
+        "title": "list_data_science_projectsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_data_science_projectsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_inference_services",
+      "description": "List deployed models in a Data Science Project with pagination.\n\n        Returns InferenceService resources representing deployed models\n        that can serve predictions.\n\n        Args:\n            namespace: The project (namespace) name.\n            limit: Maximum number of items to return (None for all).\n            offset: Starting offset for pagination (default: 0).\n            verbosity: Response detail level - \"minimal\", \"standard\", or \"full\".\n                Use \"minimal\" for quick status checks.\n\n        Returns:\n            Paginated list of deployed models with metadata.\n        ",
+      "inputSchema": {
+        "properties": {
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Limit"
+          },
+          "offset": {
+            "default": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "verbosity": {
+            "default": "standard",
+            "title": "Verbosity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "namespace"
+        ],
+        "title": "list_inference_servicesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_inference_servicesDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_model_versions",
+      "description": "List all versions of a registered model with pagination.\n\n        Each version represents a specific iteration of the model with its own\n        artifacts and metadata.\n\n        Args:\n            model_id: The parent model ID.\n            limit: Maximum number of items to return (None for all).\n            offset: Starting offset for pagination (default: 0).\n            verbosity: Response detail level - \"minimal\", \"standard\", or \"full\".\n\n        Returns:\n            Paginated list of model versions.\n        ",
+      "inputSchema": {
+        "properties": {
+          "model_id": {
+            "title": "Model Id",
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Limit"
+          },
+          "offset": {
+            "default": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "verbosity": {
+            "default": "standard",
+            "title": "Verbosity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_id"
+        ],
+        "title": "list_model_versionsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_model_versionsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_registered_models",
+      "description": "Browse available models in the Model Catalog or Model Registry with pagination.\n\n        Lists models from the Red Hat AI Model Catalog (curated, validated\n        models organized by source) or a standard Kubeflow Model Registry,\n        depending on what the cluster provides. The API type is detected\n        automatically.\n\n        Args:\n            limit: Maximum number of items to return (None for all).\n            offset: Starting offset for pagination (default: 0).\n            verbosity: Response detail level - \"minimal\", \"standard\", or \"full\".\n                Use \"minimal\" for quick status checks.\n            source_label: (Model Catalog only) Filter by source label,\n                e.g., \"Red Hat AI validated\".\n\n        Returns:\n            Paginated list of models with metadata. The response includes\n            an api_type field indicating whether the data came from\n            \"model_catalog\" or \"model_registry\".\n        ",
+      "inputSchema": {
+        "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Limit"
+          },
+          "offset": {
+            "default": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "verbosity": {
+            "default": "standard",
+            "title": "Verbosity",
+            "type": "string"
+          },
+          "source_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Label"
+          }
+        },
+        "title": "list_registered_modelsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_registered_modelsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_resource_names",
+      "description": "List just resource names without full metadata.\n\n        Returns only the names of resources, which is the most token-efficient\n        way to get a list of available resources.\n\n        Args:\n            resource_type: Type of resource - \"projects\", \"workbenches\", \"models\",\n                \"pipelines\", \"storage\", \"connections\", or \"training_jobs\".\n            namespace: The project (namespace) name. Required for all types\n                except \"projects\".\n\n        Returns:\n            List of resource names.\n        ",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "namespace": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Namespace"
+          }
+        },
+        "required": [
+          "resource_type"
+        ],
+        "title": "list_resource_namesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "description": "List of resource names.",
+        "properties": {
+          "type": {
+            "description": "Resource type",
+            "title": "Type",
+            "type": "string"
+          },
+          "count": {
+            "description": "Number of resources",
+            "title": "Count",
+            "type": "integer"
+          },
+          "names": {
+            "description": "List of resource names",
+            "items": {
+              "type": "string"
+            },
+            "title": "Names",
+            "type": "array"
+          },
+          "namespace": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Namespace (if applicable)",
+            "title": "Namespace"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Error message if any",
+            "title": "Error"
+          },
+          "valid_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "List of valid resource types (on error)",
+            "title": "Valid Types"
+          }
+        },
+        "required": [
+          "type",
+          "count",
+          "names"
+        ],
+        "title": "ResourceNameList",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_resources",
+      "description": "List any RHOAI resource type.\n\n        Generic resource lister that dispatches to the appropriate domain.\n        Use this instead of domain-specific list tools for simpler workflows.\n\n        Args:\n            resource_type: Type of resource - \"projects\", \"workbenches\", \"models\",\n                \"training_jobs\", \"connections\", \"storage\", or \"pipelines\".\n            namespace: The project (namespace) name. Required except for \"projects\".\n            limit: Maximum number of items to return.\n\n        Returns:\n            Paginated list of resources.\n        ",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "namespace": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Namespace"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Limit"
+          }
+        },
+        "required": [
+          "resource_type"
+        ],
+        "title": "list_resourcesArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_serving_runtimes",
+      "description": "List available model serving runtimes.\n\n        Serving runtimes define the model server that will be used to serve\n        predictions (e.g., OpenVINO, vLLM, TGIS, etc.).\n\n        This includes both:\n        - Existing ServingRuntimes in the namespace\n        - Available templates from the platform that can be instantiated\n\n        Args:\n            namespace: The project (namespace) name.\n            include_templates: Include available runtime templates from the\n                platform namespace (default: True).\n\n        Returns:\n            List of available serving runtimes with supported model formats.\n            Runtimes from templates will have 'requires_instantiation: true'.\n        ",
+      "inputSchema": {
+        "properties": {
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "include_templates": {
+            "default": true,
+            "title": "Include Templates",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "namespace"
+        ],
+        "title": "list_serving_runtimesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_serving_runtimesDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_storage",
+      "description": "List persistent storage (PVCs) in a Data Science Project with pagination.\n\n        Args:\n            namespace: The project (namespace) name.\n            limit: Maximum number of items to return (None for all).\n            offset: Starting offset for pagination (default: 0).\n            verbosity: Response detail level - \"minimal\", \"standard\", or \"full\".\n                Use \"minimal\" for quick status checks.\n\n        Returns:\n            Paginated list of PVCs with metadata.\n        ",
+      "inputSchema": {
+        "properties": {
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Limit"
+          },
+          "offset": {
+            "default": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "verbosity": {
+            "default": "standard",
+            "title": "Verbosity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "namespace"
+        ],
+        "title": "list_storageArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_storageDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_tool_categories",
+      "description": "List all available tool categories with descriptions.\n\n        Returns a summary of tool categories organized by use case,\n        helping you find the right tools for your task.\n\n        Returns:\n            Tool categories with descriptions and key tools.\n        ",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_tool_categoriesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_tool_categoriesDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_use_cases",
+      "description": "List all supported use cases with plain-English descriptions.\n\n        Returns the 9 use case identifiers the planner recognizes, with\n        descriptions that explain what kind of workload each covers.\n        Useful for confirming use case mappings with the customer before\n        running recommendations.\n\n        Returns:\n            List of use case objects with id and description fields,\n            plus a count.\n        ",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_use_casesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_use_casesDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "manage_resource",
+      "description": "Perform lifecycle actions on any resource type.\n\n        Generic resource management that dispatches to the appropriate domain.\n        Supports start, stop, suspend, resume, and delete operations.\n\n        Args:\n            action: Action to perform - \"start\", \"stop\", \"suspend\", \"resume\", or \"delete\".\n            resource_type: Type of resource - \"workbench\", \"model\", or \"training_job\".\n            name: The resource name.\n            namespace: The project (namespace) name.\n            confirm: Required for delete operations.\n\n        Returns:\n            Action result.\n        ",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "resource_type": {
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "confirm": {
+            "default": false,
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action",
+          "resource_type",
+          "name",
+          "namespace"
+        ],
+        "title": "manage_resourceArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "multi_resource_status",
+      "description": "Get status for multiple resources in a single call.\n\n        Efficiently retrieves status for multiple resources, reducing the\n        number of tool calls needed.\n\n        Args:\n            namespace: The project (namespace) name.\n            resources: List of resources to check, each with \"type\" and \"name\".\n                Example: [{\"type\": \"workbench\", \"name\": \"my-wb\"},\n                         {\"type\": \"model\", \"name\": \"my-model\"}]\n\n        Returns:\n            Status for each requested resource.\n        ",
+      "inputSchema": {
+        "properties": {
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "resources": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Resources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "namespace",
+          "resources"
+        ],
+        "title": "multi_resource_statusArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "ResourceStatus": {
+            "description": "Status of a single resource.",
+            "properties": {
+              "name": {
+                "description": "Resource name",
+                "title": "Name",
+                "type": "string"
+              },
+              "type": {
+                "description": "Resource type",
+                "title": "Type",
+                "type": "string"
+              },
+              "status": {
+                "default": "Unknown",
+                "description": "Current status",
+                "title": "Status",
+                "type": "string"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Resource URL if applicable",
+                "title": "Url"
+              },
+              "bucket": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "S3 bucket for connections",
+                "title": "Bucket"
+              },
+              "size": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Storage size",
+                "title": "Size"
+              },
+              "progress": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Progress percentage for training jobs",
+                "title": "Progress"
+              },
+              "message": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Status message",
+                "title": "Message"
+              },
+              "error": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Error message if any",
+                "title": "Error"
+              },
+              "valid_types": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "List of valid resource types (on error)",
+                "title": "Valid Types"
+              }
+            },
+            "required": [
+              "name",
+              "type"
+            ],
+            "title": "ResourceStatus",
+            "type": "object"
+          }
+        },
+        "description": "Status for multiple resources.",
+        "properties": {
+          "namespace": {
+            "description": "Namespace of the resources",
+            "title": "Namespace",
+            "type": "string"
+          },
+          "results": {
+            "description": "Status for each resource",
+            "items": {
+              "$ref": "#/$defs/ResourceStatus"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "success_count": {
+            "description": "Number of successful status checks",
+            "title": "Success Count",
+            "type": "integer"
+          },
+          "error_count": {
+            "description": "Number of failed status checks",
+            "title": "Error Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "namespace",
+          "results",
+          "success_count",
+          "error_count"
+        ],
+        "title": "MultiResourceStatusResult",
+        "type": "object"
+      }
+    },
+    {
+      "name": "plan_deployment",
+      "description": "Generate a deployment plan for the chosen recommendation.\n\n        Calls the Planner to produce the full deployment configuration for\n        the selected category, then validates cluster readiness: checks that\n        a vLLM serving runtime is available (or identifies which template to\n        create), and surfaces any pre-conditions the customer must resolve\n        before deployment can proceed.\n\n        Call this after the customer confirms their preferred configuration\n        from recommend_model. The returned plan is for human review before\n        execute_deployment is called.\n\n        Args:\n            category: Chosen recommendation slot. Valid values:\n                balanced, cost, performance, quality.\n            namespace: Target RHOAI project namespace.\n            use_case: Use case from the recommend_model specification.\n            user_count: User count from the recommend_model specification.\n            prompt_tokens: Prompt tokens from the recommend_model specification.\n            output_tokens: Output tokens from the recommend_model specification.\n            expected_qps: Expected QPS from the recommend_model specification.\n            ttft_target_ms: TTFT SLO target in milliseconds.\n            itl_target_ms: ITL SLO target in milliseconds.\n            e2e_target_ms: E2E SLO target in milliseconds.\n            preferred_gpu_types: GPU type filter (cluster GPU types from Phase 3).\n                Valid: L4, A100-40, A100-80, H100, H200, B200.\n            optimization_profile: Scoring profile. Valid values:\n                balanced, optimize_latency, optimize_cost, optimize_quality.\n\n        Returns:\n            Deployment plan with model, GPU config, runtime readiness,\n            storage URI (if resolvable), YAML configs for review, and\n            any issues or warnings that must be addressed before deploying.\n        ",
+      "inputSchema": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "use_case": {
+            "title": "Use Case",
+            "type": "string"
+          },
+          "user_count": {
+            "title": "User Count",
+            "type": "integer"
+          },
+          "prompt_tokens": {
+            "title": "Prompt Tokens",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "expected_qps": {
+            "title": "Expected Qps",
+            "type": "number"
+          },
+          "ttft_target_ms": {
+            "title": "Ttft Target Ms",
+            "type": "integer"
+          },
+          "itl_target_ms": {
+            "title": "Itl Target Ms",
+            "type": "integer"
+          },
+          "e2e_target_ms": {
+            "title": "E2E Target Ms",
+            "type": "integer"
+          },
+          "preferred_gpu_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Preferred Gpu Types"
+          },
+          "optimization_profile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Optimization Profile"
+          }
+        },
+        "required": [
+          "category",
+          "namespace",
+          "use_case",
+          "user_count",
+          "prompt_tokens",
+          "output_tokens",
+          "expected_qps",
+          "ttft_target_ms",
+          "itl_target_ms",
+          "e2e_target_ms"
+        ],
+        "title": "plan_deploymentArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "plan_deploymentDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "prepare_model_deployment",
+      "description": "Complete pre-flight preparation for model deployment in one call.\n\n        This composite tool combines runtime discovery, compatibility checking,\n        resource estimation, and storage validation. Use this before calling\n        deploy_model() to ensure everything is ready.\n\n        If storage_uri is not provided, attempts to resolve it automatically\n        from the Model Catalog (when available).\n\n        Args:\n            namespace: The project (namespace) name.\n            model_id: Model identifier (e.g., \"meta-llama/Llama-2-7b-hf\").\n            storage_uri: Model location (s3://, pvc://, or oci://). If not provided,\n                will attempt to look up from the Model Catalog.\n            model_format: Model format. Auto-detected from model_id if None.\n\n        Returns:\n            Complete preparation result with:\n            - ready: Whether deployment can proceed\n            - issues: List of problems found\n            - model_info: Model format and size estimates\n            - recommended_runtime: Runtime to use\n            - resource_requirements: GPU/memory requirements\n            - storage_valid: Whether storage is accessible\n            - suggested_deploy_params: Parameters for deploy_model() call\n        ",
+      "inputSchema": {
+        "properties": {
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "model_id": {
+            "title": "Model Id",
+            "type": "string"
+          },
+          "storage_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Storage Uri"
+          },
+          "model_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Model Format"
+          }
+        },
+        "required": [
+          "namespace",
+          "model_id"
+        ],
+        "title": "prepare_model_deploymentArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "prepare_model_deploymentDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "project_summary",
+      "description": "Get a compact project status optimized for context windows.\n\n        Returns a minimal summary of a specific project including workbench,\n        model, and pipeline status without full resource details.\n\n        Args:\n            namespace: The project (namespace) name.\n\n        Returns:\n            Compact project summary with resource counts.\n        ",
+      "inputSchema": {
+        "properties": {
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          }
+        },
+        "required": [
+          "namespace"
+        ],
+        "title": "project_summaryArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "description": "Compact project status optimized for context windows.",
+        "properties": {
+          "name": {
+            "description": "Project name",
+            "title": "Name",
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Human-readable display name",
+            "title": "Display Name"
+          },
+          "status": {
+            "description": "Project status",
+            "title": "Status",
+            "type": "string"
+          },
+          "workbenches": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Workbench status (e.g. '2/3 running')",
+            "title": "Workbenches"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Model status (e.g. '1/2 ready')",
+            "title": "Models"
+          },
+          "pipelines": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Number of pipelines",
+            "title": "Pipelines"
+          },
+          "storage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Number of storage volumes",
+            "title": "Storage"
+          },
+          "data_connections": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Number of data connections",
+            "title": "Data Connections"
+          }
+        },
+        "required": [
+          "name",
+          "status"
+        ],
+        "title": "ProjectSummary",
+        "type": "object"
+      }
+    },
+    {
+      "name": "recommend_model",
+      "description": "Get LLM model recommendations from Planner.\n\n        Runs the full Planner recommendation flow: extracts intent from\n        natural language, builds technical specifications, and returns\n        four named recommendations: top_performance (lowest latency),\n        top_cost (cheapest), top_balanced (weighted composite), and\n        top_quality (highest quality score).\n\n        Args:\n            text: Natural language description of the use case\n                (e.g., \"I need a chatbot for 5000 users with low latency\").\n            use_case: Override the extracted use case. Valid values:\n                chatbot_conversational, code_completion, code_generation_detailed,\n                translation, content_generation, summarization_short,\n                document_analysis_rag, long_document_summarization,\n                research_legal_analysis.\n            user_count: Override the extracted user count.\n            preferred_gpu_types: Override GPU preferences.\n                Valid: L4, A100-40, A100-80, H100, H200, B200.\n            ttft_max_ms: Maximum time-to-first-token in milliseconds.\n                Overrides the default SLO target for the use case.\n            itl_max_ms: Maximum inter-token latency in milliseconds.\n                Overrides the default SLO target for the use case.\n            e2e_max_ms: Maximum end-to-end latency in milliseconds.\n                Overrides the default SLO target for the use case.\n            min_quality: Minimum model quality score (0-100).\n                Filters out models below this quality threshold.\n            max_cost_per_month: Maximum monthly cost in USD.\n                Filters out configurations exceeding this budget.\n            optimization_profile: Scoring profile that controls how\n                recommendations are ranked. Valid values:\n                balanced (default), optimize_latency, optimize_cost,\n                optimize_quality.\n            percentile: Percentile for SLO evaluation. Valid values:\n                p90, p95 (default), p99.\n\n        Returns:\n            Four top model recommendations (top_performance, top_cost,\n            top_balanced, top_quality) with assembled specification,\n            or error dict if the request fails.\n        ",
+      "inputSchema": {
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "use_case": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Use Case"
+          },
+          "user_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "User Count"
+          },
+          "preferred_gpu_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Preferred Gpu Types"
+          },
+          "ttft_max_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ttft Max Ms"
+          },
+          "itl_max_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Itl Max Ms"
+          },
+          "e2e_max_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "E2E Max Ms"
+          },
+          "min_quality": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Min Quality"
+          },
+          "max_cost_per_month": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Max Cost Per Month"
+          },
+          "optimization_profile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Optimization Profile"
+          },
+          "percentile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Percentile"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "recommend_modelArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "recommend_modelDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "recommend_serving_runtime",
+      "description": "Recommend the best serving runtime for a model.\n\n        Analyzes available runtimes and recommends the best one based on\n        model format and size.\n\n        Args:\n            namespace: The project (namespace) name.\n            model_format: Model format (pytorch, onnx, tensorflow, etc.).\n            model_size_gb: Model size in GB (optional, for better recommendations).\n\n        Returns:\n            Runtime recommendation with alternatives.\n        ",
+      "inputSchema": {
+        "properties": {
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "model_format": {
+            "title": "Model Format",
+            "type": "string"
+          },
+          "model_size_gb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Model Size Gb"
+          }
+        },
+        "required": [
+          "namespace",
+          "model_format"
+        ],
+        "title": "recommend_serving_runtimeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "recommend_serving_runtimeDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "resource_status",
+      "description": "Get quick status check for any resource.\n\n        Provides minimal status information for a specific resource without\n        full details. Use this for quick health checks.\n\n        Args:\n            resource_type: Type of resource - \"workbench\", \"model\", \"pipeline\",\n                \"storage\", or \"connection\".\n            name: The resource name.\n            namespace: The project (namespace) name.\n\n        Returns:\n            Minimal status information for the resource.\n        ",
+      "inputSchema": {
+        "properties": {
+          "resource_type": {
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_type",
+          "name",
+          "namespace"
+        ],
+        "title": "resource_statusArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "description": "Status of a single resource.",
+        "properties": {
+          "name": {
+            "description": "Resource name",
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "description": "Resource type",
+            "title": "Type",
+            "type": "string"
+          },
+          "status": {
+            "default": "Unknown",
+            "description": "Current status",
+            "title": "Status",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Resource URL if applicable",
+            "title": "Url"
+          },
+          "bucket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "S3 bucket for connections",
+            "title": "Bucket"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Storage size",
+            "title": "Size"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Progress percentage for training jobs",
+            "title": "Progress"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Status message",
+            "title": "Message"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Error message if any",
+            "title": "Error"
+          },
+          "valid_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "List of valid resource types (on error)",
+            "title": "Valid Types"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "ResourceStatus",
+        "type": "object"
+      }
+    },
+    {
+      "name": "set_model_serving_mode",
+      "description": "Set the model serving mode for a project.\n\n        Args:\n            name: The project (namespace) name.\n            enable_modelmesh: True for multi-model serving (ModelMesh),\n                False for single-model serving (KServe).\n\n        Returns:\n            Updated project information.\n\n        Note:\n            Changing the model serving mode may affect existing deployed models.\n            It's recommended to remove existing models before changing modes.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "enable_modelmesh": {
+            "title": "Enable Modelmesh",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "enable_modelmesh"
+        ],
+        "title": "set_model_serving_modeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "set_model_serving_modeDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "suggest_tools",
+      "description": "Get recommended tools and workflow for a given intent.\n\n        Given a natural language description of what you want to do,\n        returns the recommended tools and typical workflow steps.\n\n        Args:\n            intent: What you want to do (e.g., \"train a model\", \"debug failed job\").\n            context: Optional context like {\"namespace\": \"...\", \"resource_name\": \"...\"}.\n\n        Returns:\n            Recommended tools with:\n            - workflow: List of tools to use in order\n            - explanation: How to use them\n            - example_calls: Example tool invocations\n            - category: Tool category this matches\n\n        Example intents:\n            - \"train llama on my dataset\"\n            - \"check why my training job failed\"\n            - \"deploy a model for inference\"\n            - \"see what's running in my cluster\"\n        ",
+      "inputSchema": {
+        "properties": {
+          "intent": {
+            "title": "Intent",
+            "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context"
+          }
+        },
+        "required": [
+          "intent"
+        ],
+        "title": "suggest_toolsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "suggest_toolsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "test_model_endpoint",
+      "description": "Test a deployed model's inference endpoint.\n\n        Checks if the model endpoint is accessible and provides example\n        request format.\n\n        Args:\n            name: The InferenceService name.\n            namespace: The project (namespace) name.\n            sample_input: Optional sample input for testing.\n\n        Returns:\n            Endpoint test results with accessibility status.\n        ",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "namespace": {
+            "title": "Namespace",
+            "type": "string"
+          },
+          "sample_input": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sample Input"
+          }
+        },
+        "required": [
+          "name",
+          "namespace"
+        ],
+        "title": "test_model_endpointArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "test_model_endpointDictOutput",
+        "type": "object"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "cluster_accelerators",
+      "uri": "rhoai://cluster/accelerators",
+      "description": "Get available accelerator profiles (GPUs).\n\n        Returns the list of AcceleratorProfile resources that define\n        available GPU types and configurations.\n        ",
+      "mimeType": "text/plain"
+    },
+    {
+      "name": "cluster_plugins",
+      "uri": "rhoai://cluster/plugins",
+      "description": "Get information about loaded plugins.\n\n        Returns details about all plugins with their health status.\n        ",
+      "mimeType": "text/plain"
+    },
+    {
+      "name": "cluster_status",
+      "uri": "rhoai://cluster/status",
+      "description": "Get RHOAI cluster status and health.\n\n        Returns overall cluster status including RHOAI operator status,\n        available components, and loaded plugins.\n        ",
+      "mimeType": "text/plain"
+    },
+    {
+      "name": "tool_categories",
+      "uri": "rhoai://tools/categories",
+      "description": "Tool categories organized by use case with usage hints.\n\n        Returns tools organized by category with workflow suggestions,\n        helping AI agents navigate the available capabilities efficiently.\n        ",
+      "mimeType": "text/plain"
+    },
+    {
+      "name": "tool_workflows",
+      "uri": "rhoai://tools/workflows",
+      "description": "Common workflows with step-by-step tool usage.\n\n        Provides detailed workflow guides for common tasks.\n        ",
+      "mimeType": "text/plain"
+    }
+  ],
+  "resourceTemplates": [
+    {
+      "name": "project_models",
+      "uriTemplate": "rhoai://projects/{name}/models",
+      "description": "Get list of deployed models in a Data Science Project.\n\n        Returns all InferenceServices with their status and endpoints.\n        ",
+      "mimeType": "text/plain"
+    },
+    {
+      "name": "project_status",
+      "uriTemplate": "rhoai://projects/{name}/status",
+      "description": "Get comprehensive status of a Data Science Project.\n\n        Returns project metadata and resource summary including counts\n        of workbenches, models, connections, and storage.\n        ",
+      "mimeType": "text/plain"
+    },
+    {
+      "name": "project_workbenches",
+      "uriTemplate": "rhoai://projects/{name}/workbenches",
+      "description": "Get list of workbenches in a Data Science Project.\n\n        Returns all workbenches with their current status, image,\n        and access URL.\n        ",
+      "mimeType": "text/plain"
+    }
+  ],
+  "prompts": []
+}

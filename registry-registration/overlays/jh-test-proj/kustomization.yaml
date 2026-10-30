@@ -6,8 +6,19 @@ resources:
 - runtime/prerequisites.yaml
 - runtime/mcpserver.yaml
 - runtime/route.yaml
+- runtime/route-reader.yaml
 configMapGenerator:
 - name: mcp-registry-settings
   behavior: merge
   envs:
   - settings.env
+- name: mcp-registry-data
+  behavior: merge
+  files:
+  - server.json=registry/server.json
+  - capabilities.json=registry/capabilities.json
+patches:
+- target:
+    kind: Job
+    name: mcp-registry-registration
+  patch: "- op: replace\n  path: /spec/activeDeadlineSeconds\n  value: 600\n"

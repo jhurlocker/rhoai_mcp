@@ -86,7 +86,39 @@ def load(path, settings):
     return render(json.loads(path.read_text()), settings)
 
 
-def discover(server, settings):
+def resolve_route(settings):
+    """Resolve a controller-assigned Route host; never store cluster hosts in Git."""
+    name = settings.get("MCP_ROUTE_NAME")
+    if not name:
+        return
+    namespace = settings["POD_NAMESPACE"]
+    host = settings.get("KUBERNETES_SERVICE_HOST", "kubernetes.default.svc")
+    if ":" in host and not host.startswith("["):
+        host = "[" + host + "]"
+    port = settings.get("KUBERNETES_SERVICE_PORT_HTTPS", "443")
+    context = ssl.create_default_context(cafile=settings.get("KUBERNETES_CA_FILE", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"))
+    opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=context), NoRedirect())
+    url = f"https://{host}:{port}/apis/route.openshift.io/v1/namespaces/{urllib.parse.quote(namespace,safe='')}/routes/{urllib.parse.quote(name,safe='')}"
+    deadline = time.monotonic() + int(settings.get("MCP_WAIT_SECONDS", "180"))
+    while True:
+        token = Path(settings["REGISTRY_TOKEN_FILE"]).read_text().strip()
+        req = urllib.request.Request(url, headers={"Authorization":"Bearer "+token})
+        with opener.open(req, timeout=20) as response:
+            route = json.loads(response.read())
+        hostname = route.get("spec", {}).get("host")
+        admitted = any(c.get("type")=="Admitted" and c.get("status")=="True"
+                       for ingress in route.get("status",{}).get("ingress",[]) for c in ingress.get("conditions",[]))
+        if hostname and admitted:
+            if not re.fullmatch(r"[A-Za-z0-9.-]+",hostname):
+                raise ValueError("Route returned an invalid host")
+            settings["MCP_URL"] = "https://" + hostname + settings.get("MCP_PATH", "/mcp")
+            return
+        if time.monotonic() >= deadline:
+            raise RuntimeError("MCP Route is not admitted; no registry writes performed")
+        time.sleep(2)
+
+
+def discover(server, settings, initialize_only=False):
     from mcp_http import MCP
     mode = settings.get("MCP_AUTH_MODE", "serviceaccount")
     if mode == "serviceaccount":
@@ -97,14 +129,29 @@ def discover(server, settings):
         auth = None
     else:
         raise ValueError("MCP_AUTH_MODE must be serviceaccount, header or none")
-    client = MCP(settings["MCP_URL"], auth, ca_file=settings.get("MCP_CA_FILE") or None)
+    url = settings.get("MCP_DISCOVERY_URL") or settings["MCP_URL"]
+    deadline = time.monotonic() + int(settings.get("MCP_WAIT_SECONDS", "0"))
+    while True:
+        client = MCP(url, auth, ca_file=settings.get("MCP_CA_FILE") or None)
+        try:
+            init = client.initialize()
+            if init["http_status"] in {404,502,503,504} and time.monotonic() < deadline:
+                client.close()
+                time.sleep(2)
+                continue
+            break
+        except (urllib.error.URLError, TimeoutError, OSError):
+            if time.monotonic() >= deadline:
+                raise RuntimeError("MCP runtime is not reachable; no registry writes performed") from None
+            time.sleep(2)
     try:
-        init = client.initialize()
         result = (init.get("body") or {}).get("result")
         if not result:
             raise RuntimeError("MCP metadata initialization failed, HTTP " + str(init["http_status"]))
         if result.get("serverInfo", {}).get("version") != server["version"]:
             raise RuntimeError("SERVER_VERSION differs from the running MCP server; no registration writes performed")
+        if initialize_only:
+            return result["protocolVersion"], None
         snapshots = {}
         for key, method, field in (("tools", "tools/list", "tools"),
                                    ("resources", "resources/list", "resources"),
@@ -132,11 +179,25 @@ def build_plans(settings, data_dir, live=False):
         server = load(data_dir / "server.json", settings)
         metadata = {k:str(v) for k,v in load(data_dir / "metadata.json", settings).items()}
         tools = None
-        if live and enabled(settings, "DISCOVER_REAL", "true"):
+        if settings.get("CAPABILITIES_FILE"):
+            snapshot = json.loads(Path(settings["CAPABILITIES_FILE"]).read_text())
+            if snapshot["serverInfo"]["version"] != server["version"]:
+                raise ValueError("Committed capability snapshot version differs from SERVER_VERSION")
+            tools = snapshot["tools"]
+            server.setdefault("_meta", {})["governance.example.com"] = {
+                key:snapshot[key] for key in ("resources", "resourceTemplates", "prompts")}
+            metadata["protocol_version"] = snapshot["protocolVersion"]
+            if live and enabled(settings, "DISCOVER_REAL", "true"):
+                protocol, _ = discover(server,settings,initialize_only=True)
+                if protocol != snapshot["protocolVersion"]:
+                    raise RuntimeError("Runtime protocol differs from the committed snapshot")
+        elif live and enabled(settings, "DISCOVER_REAL", "true"):
             protocol, snapshot = discover(server, settings)
             metadata["protocol_version"] = protocol
             tools = snapshot.pop("tools")
             server.setdefault("_meta", {})["governance.example.com"] = snapshot
+        if settings.get("MCP_ROUTE_NAME"):
+            metadata["route_reference"] = "Route/" + settings["MCP_NAMESPACE"] + "/" + settings["MCP_ROUTE_NAME"]
         plans.append({"name":server["name"], "description":server.get("description", ""),
                       "versions":[{"server_json":server, "tools":tools, "metadata":metadata,
                                    "status":settings.get("REAL_VERSION_STATUS", "draft")} ]})
@@ -250,6 +311,44 @@ def reconcile(registry, plans, application):
     return result
 
 
+def ensure_access_endpoints(registry, plans, settings):
+    """Create only missing native connection endpoints for the real active version."""
+    if not enabled(settings,"ENSURE_ACCESS_ENDPOINT"):
+        return []
+    result=[]
+    for plan in plans:
+        if plan["name"] != settings["REGISTRY_SERVER_NAME"]:
+            continue
+        for item in plan["versions"]:
+            if item["status"] != "active":
+                raise ValueError("A usable access endpoint requires REAL_VERSION_STATUS=active")
+            version=item["server_json"]["version"]
+            endpoint_path=registry.path(plan["name"])+"/endpoints"
+            query=urllib.parse.urlencode({"server_version":version,"max_results":100})
+            code,body=registry.request("GET",endpoint_path+"?"+query)
+            if code!=200:
+                raise RuntimeError("Access endpoint lookup failed, HTTP "+str(code))
+            found=list(body.get("mcp_access_endpoints",[]))
+            cursor=body.get("next_page_token")
+            while cursor:
+                code,page=registry.request("GET",endpoint_path+"?"+query+"&"+urllib.parse.urlencode({"page_token":cursor}))
+                if code!=200:
+                    raise RuntimeError("Access endpoint pagination failed")
+                found+=page.get("mcp_access_endpoints",[])
+                cursor=page.get("next_page_token")
+            remote=item["server_json"]["remotes"][0]
+            matches=[e for e in found if e.get("url")==remote["url"] and e.get("transport_type")==remote["type"]]
+            if matches:
+                action="unchanged"
+            else:
+                code,created=registry.request("POST",endpoint_path,{"url":remote["url"],"transport_type":remote["type"],"server_version":version})
+                if code not in {200,201}:
+                    raise RuntimeError("Access endpoint creation failed, HTTP "+str(code))
+                action="create"
+            result.append({"name":plan["name"],"version":version,"action":action})
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir",type=Path,default=Path("/data"))
@@ -258,13 +357,17 @@ def main():
     settings = dict(os.environ)
     if args.apply and settings.get("POD_NAMESPACE") != settings.get("REGISTRY_WORKSPACE"):
         raise ValueError("Run the Job in the target REGISTRY_WORKSPACE namespace; check the cluster overlay")
+    if args.apply:
+        resolve_route(settings)
     plans = build_plans(settings,args.data_dir,live=args.apply)
     if not args.apply:
         # Do not print metadata values or credentials. Discovery is deferred.
         print(json.dumps({"mode":"plan-only", "records":[{"name":p["name"], "versions":[v["server_json"]["version"] for v in p["versions"]]} for p in plans]},indent=2))
         return
-    result = reconcile(Registry(settings),plans,settings["APPLICATION_ID"])
-    print(json.dumps({"workspace":settings["REGISTRY_WORKSPACE"], "versions":result},indent=2))
+    registry=Registry(settings)
+    result = reconcile(registry,plans,settings["APPLICATION_ID"])
+    endpoints=ensure_access_endpoints(registry,plans,settings)
+    print(json.dumps({"workspace":settings["REGISTRY_WORKSPACE"], "versions":result,"access_endpoints":endpoints},indent=2))
 
 
 if __name__ == "__main__":

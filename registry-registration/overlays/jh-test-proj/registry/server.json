@@ -1,0 +1,20 @@
+{
+  "name": "${REGISTRY_SERVER_NAME}",
+  "version": "${SERVER_VERSION}",
+  "title": "Red Hat OpenShift AI MCP server",
+  "description": "Project-local OpenShift AI MCP server deployed in jh-test-proj by Argo CD.",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "${MCP_URL}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer followed by the caller's OpenShift access token.",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

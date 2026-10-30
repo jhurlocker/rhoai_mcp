@@ -1,36 +1,46 @@
 # MCP registry registration with Argo CD
 
-## jh-test-proj cluster POC
+## jh-test-proj: project-local deployment and available canonical record
 
-The registration bundle is under `registry-registration/` in this repository.
-The `jh-test-proj` overlay registers the existing server from namespace
-`rhoai-mcp` into the `jh-test-proj` AI Hub/MLflow workspace, and also loads the
-three synthetic draft versions in a separate POC record. It does not redeploy
-the existing MCP runtime. Project requester `admin` and project administrators
-are recorded as POC owner/contact references; these are not verified enterprise
-ownership or security classification.
+The `registry-registration/overlays/jh-test-proj` overlay now deploys its own
+`MCPServer/rhoai-mcp`, Deployment, Service and authenticated HTTPS Route in
+`jh-test-proj`. It registers **com.redhat/rhoai-mcp-server 1.29.1 as active** in
+that workspace and creates its native access-endpoint entry. The separate
+runtime in `rhoai-mcp` is not changed. This corrects the earlier
+registration-only setup, which left drafts pointing at the other namespace.
 
-From the repository root:
+The server uses OpenShift TokenReview and the caller's Kubernetes permissions.
+Anonymous MCP requests are rejected; clients supply `Authorization: Bearer
+<their OpenShift token>`. No real token is stored in Git. The Route hostname is
+assigned by the target cluster, then read by the publisher, so no source-cluster
+public hostname is embedded in this repository.
+
+The full capability snapshot is captured from the project-local server as an
+authorized administrator and committed as `registry/capabilities.json`. The
+publisher verifies server version/protocol using its own limited identity;
+it does not receive runtime workload permissions merely to enumerate every
+administrator-visible tool. Tool invocation is still checked as the actual caller.
 
 ```bash
 kustomize build registry-registration/overlays/jh-test-proj
 oc apply -f registry-registration/argocd/jh-test-proj.yaml
+oc get mcpserver,deploy,pod,service,route -n jh-test-proj
 oc get application jh-test-proj-mcp-registration -n openshift-gitops
 oc logs -n jh-test-proj job/mcp-registry-registration
 ```
 
-The Application uses this repository's `main` branch and the cluster-local
-Argo CD destination. Versions stay drafts. No registry history is deleted.
+The Application uses `main`. The canonical real server is the available
+connection target. Earlier `*-poc` and synthetic `.invalid` records are retained
+metadata-only history; the overlay no longer publishes those as deployed
+servers (`REGISTER_POC=false`). A metadata fixture does not create an MCP runtime.
+Use AI Hub's active/available view for the canonical server. Per-version history
+is retained; the publisher performs no native deletion.
 
-Live validation on October 30, 2026 succeeded: the initial and repeat full
-syncs were Synced/Healthy with successful hook Jobs. The first created one real
-server draft (53 tools, five resources, three templates) and three separate
-synthetic drafts; the repeat reported all four unchanged. The publisher could
-read this workspace (200), was denied another workspace (403), and had no
-registry-delete or Secret-read permission. The existing runtime was not changed.
-For the general package instructions below, first `cd registry-registration`;
-those paths are relative to that standalone bundle.
-
+The general instructions below describe the registration-only **base/example**
+overlay. Run their paths from `registry-registration/`. The `jh-test-proj`
+overlay additionally contains `runtime/` and a reviewed capability snapshot;
+it needs Argo authorization for the MCPServer, Route and uniquely named
+TokenReview/SubjectAccessReview ClusterRole/Binding.
 
 Copy **this directory's contents** into a new Git repository. It is a standalone
 registration-only package for clusters that already have OpenShift AI and the MLflow-backed MCP registry installed and configured.
