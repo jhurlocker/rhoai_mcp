@@ -1,8 +1,7 @@
 # MCP registry registration with Argo CD
 
 Copy **this directory's contents** into a new Git repository. It is a standalone
-registration-only package for clusters that already have OpenShift AI,
-`rhoai-mcp`, and the MLflow-backed MCP registry installed and configured.
+registration-only package for clusters that already have OpenShift AI and the MLflow-backed MCP registry installed and configured.
 It has no imports, build paths, or runtime dependency on the original validation
 repository. It requires no custom image build, `oc` binary, Python packages,
 interactive login, or credentials committed to Git.
