@@ -1,0 +1,12 @@
+{
+  "owner": "${MCP_OWNER}",
+  "project": "${REGISTRY_WORKSPACE}",
+  "purpose": "Existing OpenShift AI MCP server for the POC workspace.",
+  "security_domain": "${MCP_SECURITY_DOMAIN}",
+  "protocol_version": "2025-03-26",
+  "transport": "streamable-http",
+  "route_reference": "Service/${MCP_NAMESPACE}/${MCP_NAME}:8000/mcp",
+  "authentication_method": "kubernetes-bearer-token",
+  "support_contact": "${MCP_SUPPORT_CONTACT}",
+  "metadata_schema": "poc-v1"
+}

@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: rhoai-mcp
+resources:
+  - ../../base
+configMapGenerator:
+  - name: mcp-registry-settings
+    behavior: merge
+    envs: [settings.env]
+# Mirror/pin the runner image for your cluster using Kustomize images, e.g.
+# images:
+#   - name: registry.access.redhat.com/ubi9/python-311
+#     newName: your-registry.example.com/approved/python-311
+#     digest: sha256:<approved-image-digest>

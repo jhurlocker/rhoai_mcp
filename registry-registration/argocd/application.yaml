@@ -1,0 +1,31 @@
+# Assumes ONLY this standalone directory's CONTENTS were copied to the repo root.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rhoai-mcp-registration
+  namespace: openshift-gitops
+spec:
+  project: default
+  source:
+    repoURL: https://git.example.com/your-team/mcp-registry-gitops.git
+    targetRevision: main
+    path: overlays/example
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: rhoai-mcp
+  ignoreDifferences:
+    # OpenShift owns the injected trust data. Argo still manages this ConfigMap's
+    # metadata/annotation, but must not erase the controller-populated CA bundle.
+    - group: ""
+      kind: ConfigMap
+      name: mcp-registry-service-ca
+      jsonPointers: [/data]
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 2
+      backoff: {duration: 10s, factor: 2, maxDuration: 60s}

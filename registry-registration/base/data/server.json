@@ -1,0 +1,7 @@
+{
+  "name": "${REGISTRY_SERVER_NAME}",
+  "version": "${SERVER_VERSION}",
+  "title": "Red Hat OpenShift AI MCP server",
+  "description": "Existing OpenShift AI MCP server, registered by the GitOps POC.",
+  "remotes": [{"type": "streamable-http", "url": "${MCP_URL}"}]
+}

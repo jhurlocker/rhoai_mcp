@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - identity.yaml
+  - service-ca.yaml
+  - job.yaml
+configMapGenerator:
+  - name: mcp-registry-settings
+    envs: [settings.env]
+  - name: mcp-registry-data
+    files:
+      - server.json=data/server.json
+      - metadata.json=data/metadata.json
+      - poc-versions.json=data/poc-versions.json
+  - name: mcp-registry-runner
+    files:
+      - runner.py=runtime/runner.py
+      - mcp_http.py=runtime/mcp_http.py
+generatorOptions:
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"

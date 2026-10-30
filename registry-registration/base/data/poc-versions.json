@@ -1,0 +1,76 @@
+{
+  "server": {
+    "description": "Dedicated MCP registry version and metadata acceptance POC."
+  },
+  "versions": [
+    {
+      "version": "1.0.0",
+      "status": "draft",
+      "title": "Registry acceptance POC v1",
+      "description": "First retained POC version with echo capability.",
+      "tools": [
+        {
+          "name": "echo_v1",
+          "description": "Synthetic v1 capability snapshot.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      ]
+    },
+    {
+      "version": "2.0.0",
+      "status": "draft",
+      "title": "Registry acceptance POC v2",
+      "description": "Second POC version with changed and added capabilities.",
+      "tools": [
+        {
+          "name": "echo_v2",
+          "description": "Synthetic v2 capability snapshot.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {}
+          }
+        },
+        {
+          "name": "inspect_example",
+          "description": "Synthetic additional capability.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      ]
+    },
+    {
+      "version": "3.0.0",
+      "status": "draft",
+      "title": "Registry acceptance POC retirement probe",
+      "description": "Disposable version for native deprecation and soft-deletion checks.",
+      "tools": [
+        {
+          "name": "retirement_probe",
+          "description": "Synthetic retirement capability snapshot.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      ]
+    }
+  ],
+  "version_metadata": {
+    "owner": "poc-platform-team",
+    "purpose": "Demonstrate registry version metadata and retained snapshots.",
+    "security_domain": "poc-internal",
+    "protocol_version": "2025-03-26",
+    "transport": "streamable-http",
+    "route_reference": "HTTPRoute/example-project/example-mcp",
+    "authentication_method": "api-key",
+    "support_contact": "poc-support@example.com",
+    "metadata_schema": "poc-v1",
+    "approval_reference": "POC-EXAMPLE-REVIEW",
+    "test_scope": "synthetic-registry-record-only"
+  }
+}

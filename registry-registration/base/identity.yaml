@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mcp-registry-publisher
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mcp-registry-publisher
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+rules:
+  # MLflow's Kubernetes auth uses namespace-scoped pseudo-resources.
+  # This permits MCP registry reads/creation/metadata updates, not deployment
+  # changes, runtime tool calls, or native registry deletion.
+  - apiGroups: [mlflow.kubeflow.org]
+    resources: [mcpservers]
+    verbs: [get, list, create, update]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mcp-registry-publisher
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+subjects:
+  - kind: ServiceAccount
+    name: mcp-registry-publisher
+    # The overlay's namespace transformer fills this subject namespace.
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mcp-registry-publisher
